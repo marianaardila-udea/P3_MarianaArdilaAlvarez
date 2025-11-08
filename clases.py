@@ -72,3 +72,27 @@ class EstudioImaginologico:
 
         nombre = input("Nombre para guardar redimensionada (.png): ")
         cv2.imwrite(nombre, resized)
+    def segmentacion(self):
+        z = int(input(f"Ingrese índice de corte (0-{self.shape[0]-1}): "))
+        slice_2d = self.image_3d[z, :, :].astype(float)
+        img_norm = (slice_2d - slice_2d.min()) / (slice_2d.max() - slice_2d.min()) * 255
+        img_uint8 = img_norm.astype(np.uint8)
+
+        print("1: Binario\n2: Binario invertido\n3: Truncado\n4: To zero\n5: To zero invertido")
+        tipo = int(input("Tipo: "))
+        tipos = {1: cv2.THRESH_BINARY, 2: cv2.THRESH_BINARY_INV, 3: cv2.THRESH_TRUNC,
+                 4: cv2.THRESH_TOZERO, 5: cv2.THRESH_TOZERO_INV}
+        
+        thresh = float(input("Umbral (0 para Otsu): "))
+        if thresh == 0:
+            _, seg = cv2.threshold(img_uint8, 0, 255, tipos[tipo] + cv2.THRESH_OTSU)
+        else:
+            _, seg = cv2.threshold(img_uint8, thresh, 255, tipos[tipo])
+
+        fig, axs = plt.subplots(1, 2)
+        axs[0].imshow(img_uint8, cmap="gray"); axs[0].set_title("Original")
+        axs[1].imshow(seg, cmap="gray"); axs[1].set_title("Segmentada")
+        plt.show()
+
+        nombre = input("Nombre para guardar segmentada (.png): ")
+        cv2.imwrite(nombre, seg)
