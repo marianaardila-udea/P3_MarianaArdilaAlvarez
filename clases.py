@@ -118,7 +118,7 @@ class EstudioImaginologico:
 
         nombre = input("Nombre para guardar (.png): ")
         cv2.imwrite(nombre, result)
-        
+
 class GestorDICOM:
     def __init__(self):
         self.estudios = []
@@ -154,3 +154,20 @@ class GestorDICOM:
         )
         self.estudios.append(estudio)
         print(f"Estudio {len(self.estudios)} cargado")
+    def convertir_nifti(self, idx, salida):
+        e = self.estudios[idx]
+        affine = np.diag([e.pixel_spacing[0], e.pixel_spacing[1], e.slice_thickness, 1])
+        nii = nib.Nifti1Image(e.image_3d, affine)
+        nib.save(nii, salida)
+
+    def guardar_csv(self, archivo="estudios.csv"):
+        datos = [{
+            "Study Date": e.study_date,
+            "Study Time": e.study_time,
+            "Modality": e.modality,
+            "Study Description": e.study_description,
+            "Series Time": e.series_time,
+            "Duración (s)": e.duration,
+            "Shape": e.shape
+        } for e in self.estudios]
+        pd.DataFrame(datos).to_csv(archivo, index=False)
