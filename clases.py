@@ -96,3 +96,25 @@ class EstudioImaginologico:
 
         nombre = input("Nombre para guardar segmentada (.png): ")
         cv2.imwrite(nombre, seg)
+    def morfologica(self):
+        z = int(input(f"Ingrese índice de corte (0-{self.shape[0]-1}): "))
+        slice_2d = self.image_3d[z, :, :].astype(float)
+        img_norm = (slice_2d - slice_2d.min()) / (slice_2d.max() - slice_2d.min()) * 255
+        img_uint8 = img_norm.astype(np.uint8)
+
+        k = int(input("Tamaño kernel (impar): "))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
+        
+        print("1:Dilatación 2:Erosión 3:Apertura 4:Cierre")
+        op = int(input("Operación: "))
+        ops = {1: cv2.MORPH_DILATE, 2: cv2.MORPH_ERODE, 3: cv2.MORPH_OPEN, 4: cv2.MORPH_CLOSE}
+        
+        result = cv2.morphologyEx(img_uint8, ops[op], kernel)
+
+        fig, axs = plt.subplots(1, 2)
+        axs[0].imshow(img_uint8, cmap="gray"); axs[0].set_title("Original")
+        axs[1].imshow(result, cmap="gray"); axs[1].set_title("Morfología")
+        plt.show()
+
+        nombre = input("Nombre para guardar (.png): ")
+        cv2.imwrite(nombre, result)
