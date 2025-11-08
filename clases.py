@@ -118,3 +118,39 @@ class EstudioImaginologico:
 
         nombre = input("Nombre para guardar (.png): ")
         cv2.imwrite(nombre, result)
+        
+class GestorDICOM:
+    def __init__(self):
+        self.estudios = []
+
+    def cargar_carpeta(self, ruta):
+        archivos = [os.path.join(ruta, f) for f in os.listdir(ruta) if f.lower().endswith(".dcm")]
+        dss = [pydicom.dcmread(f) for f in archivos]
+        dss.sort(key=lambda x: x.InstanceNumber)
+
+        vol = np.stack([ds.pixel_array for ds in dss])
+
+        ds0 = dss[0]
+        dslast = dss[-1]
+
+        st = ds0.StudyTime[:6] if hasattr(ds0, "StudyTime") else "000000"
+        et = dslast.SeriesTime[:6] if hasattr(dslast, "SeriesTime") else st
+        try:
+            duration = (datetime.strptime(et, "%H%M%S") - datetime.strptime(st, "%H%M%S")).total_seconds()
+            if duration < 0: duration += 86400
+        except:
+            duration = 0
+
+        ps = ds0.PixelSpacing if hasattr(ds0, "PixelSpacing") else [1.0, 1.0]
+        sthk = ds0.SliceThickness if hasattr(ds0, "SliceThickness") else 1.0
+
+        estudio = EstudioImaginologico(
+            ds0.StudyDate if hasattr(ds0, "StudyDate") else "",
+            ds0.StudyTime if hasattr(ds0, "StudyTime") else "",
+            ds0.Modality if hasattr(ds0, "Modality") else "",
+            ds0.StudyDescription if hasattr(ds0, "StudyDescription") else "",
+            dslast.SeriesTime if hasattr(dslast, "SeriesTime") else "",
+            duration, vol, ps, sthk
+        )
+        self.estudios.append(estudio)
+        print(f"Estudio {len(self.estudios)} cargado")
