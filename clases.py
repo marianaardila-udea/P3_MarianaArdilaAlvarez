@@ -42,3 +42,33 @@ class EstudioImaginologico:
         
         plt.suptitle(f"{self.study_description} - {self.modality}")
         plt.show()
+    def zoom(self):
+        z = int(input(f"Ingrese índice de corte transversal (0-{self.shape[0]-1}): "))
+        slice_2d = self.image_3d[z, :, :].astype(float)
+        
+        img_norm = (slice_2d - slice_2d.min()) / (slice_2d.max() - slice_2d.min()) * 255
+        img_uint8 = img_norm.astype(np.uint8)
+        img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_GRAY2BGR)
+
+        x1, y1, x2, y2 = map(int, input("Ingrese x1 y1 x2 y2 (columna fila): ").split())
+        
+        cv2.rectangle(img_bgr, (x1, y1), (x2, y2), (0, 0, 255), 3)
+        
+        width_mm = abs(x2 - x1) * self.pixel_spacing[1]
+        height_mm = abs(y2 - y1) * self.pixel_spacing[0]
+        text = f"{width_mm:.2f}x{height_mm:.2f} mm"
+        cv2.putText(img_bgr, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+        crop = img_bgr[y1:y2, x1:x2]
+        scale = float(input("Factor de redimensionamiento (>1 para zoom): "))
+        resized = cv2.resize(crop, (int(crop.shape[1] * scale), int(crop.shape[0] * scale)))
+
+        fig, axs = plt.subplots(1, 2, figsize=(14, 7))
+        axs[0].imshow(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+        axs[0].set_title("Original")
+        axs[1].imshow(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))
+        axs[1].set_title("Recortada y redimensionada")
+        plt.show()
+
+        nombre = input("Nombre para guardar redimensionada (.png): ")
+        cv2.imwrite(nombre, resized)
